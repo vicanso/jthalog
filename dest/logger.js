@@ -1,21 +1,48 @@
 (function() {
-  var config, connectionTotalLog, createLogFileWriteStream, fs, getLogFile, haproxyStatistics, logCacheTotal, logFileName, logFileWriteStream, logPath, msgList, path, statusCodeCounter, timing;
+  var connectionTotalLog, createLogFileWriteStream, fs, getLogFile, haproxyStatistics, logCacheTotal, logFileName, logFileWriteStream, logPath, msgList, path, statsClient, statusCodeCounter, timing;
 
   path = require('path');
 
   fs = require('fs');
 
-  config = require('./config');
-
   logCacheTotal = 20;
 
-  logPath = config.getLogPath();
+  logPath = null;
 
   logFileName = null;
 
   logFileWriteStream = null;
 
+  statsClient = null;
+
   msgList = [];
+
+
+  /**
+   * [setLogPath 设置log的目录]
+   * @param {[type]} filePath [description]
+   */
+
+  module.exports.setLogPath = function(filePath) {
+    logPath = filePath;
+  };
+
+
+  /**
+   * [setStatsClient 设置stats client]
+   * @param {[type]} client [description]
+   */
+
+  module.exports.setStatsClient = function(client) {
+    statsClient = client;
+  };
+
+
+  /**
+   * [log log文件]
+   * @param  {[type]} msg [description]
+   * @return {[type]}     [description]
+   */
 
   module.exports.log = function(msg) {
     msgList.push(msg);
@@ -48,7 +75,7 @@
       requestUrl = msg.substring(urlIndex);
       requestUrl = requestUrl.substring(1, requestUrl.length - 1);
       infos = msg.substring(0, urlIndex - 1).split(' ');
-      if ((infos != null ? infos.length : void 0) === 12) {
+      if ((infos != null ? infos.length : void 0) === 12 && statsClient) {
         timing(infos[4]);
         statusCodeCounter(infos[5]);
         return connectionTotalLog(infos[10]);
@@ -64,22 +91,20 @@
    */
 
   timing = function(info) {
-    var tags, time, timeList;
+    var key, tags, time, _i, _len, _ref, _results;
     if (!info) {
       return;
     }
     tags = ['TQ', 'TW', 'TC', 'TR', 'TT'];
-    timeList = (function() {
-      var _i, _len, _ref, _results;
-      _ref = info.split('/');
-      _results = [];
-      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-        time = _ref[_i];
-        _results.push(GLOBAL.parseInt(time));
-      }
-      return _results;
-    })();
-    return console.dir(timeList);
+    _ref = info.split('/');
+    _results = [];
+    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+      time = _ref[_i];
+      time = GLOBAL.parseInt(time);
+      key = "time." + tags[i];
+      _results.push(statsClient.gauge(key, time));
+    }
+    return _results;
   };
 
 
@@ -90,10 +115,12 @@
    */
 
   statusCodeCounter = function(code) {
+    var key;
     if (!code) {
       return;
     }
-    return console.dir(code);
+    key = "statusCode." + code;
+    return statsClient.count(key);
   };
 
 
@@ -104,22 +131,25 @@
    */
 
   connectionTotalLog = function(info) {
-    var tags, total, totalList;
+    var i, key, tag, tags, total, _i, _len, _ref, _results;
     if (!info) {
       return;
     }
     tags = ['actconn', 'feconn', 'beconn', 'srv_conn', 'retries'];
-    totalList = (function() {
-      var _i, _len, _ref, _results;
-      _ref = info.split('/');
-      _results = [];
-      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-        total = _ref[_i];
-        _results.push(GLOBAL.parseInt(total));
+    _ref = info.split('/');
+    _results = [];
+    for (i = _i = 0, _len = _ref.length; _i < _len; i = ++_i) {
+      total = _ref[i];
+      total = GLOBAL.parseInt(total);
+      tag = tags[i];
+      key = "connection." + tag;
+      if (tag === 'retries') {
+        _results.push(statsClient.count(key, total));
+      } else {
+        _results.push(statsClient.gauge(key, total));
       }
-      return _results;
-    })();
-    return console.dir(totalList);
+    }
+    return _results;
   };
 
 

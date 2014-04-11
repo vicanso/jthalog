@@ -1,14 +1,35 @@
 path = require 'path'
 fs = require 'fs'
 
-config = require './config'
 logCacheTotal = 20
-logPath = config.getLogPath()
+logPath = null
 logFileName = null
 logFileWriteStream = null
+statsClient = null
 msgList = []
 
 
+###*
+ * [setLogPath 设置log的目录]
+ * @param {[type]} filePath [description]
+###
+module.exports.setLogPath = (filePath) ->
+  logPath = filePath
+  return
+
+###*
+ * [setStatsClient 设置stats client]
+ * @param {[type]} client [description]
+###
+module.exports.setStatsClient = (client) ->
+  statsClient = client
+  return
+
+###*
+ * [log log文件]
+ * @param  {[type]} msg [description]
+ * @return {[type]}     [description]
+###
 module.exports.log = (msg) ->
   msgList.push msg
   haproxyStatistics msg
@@ -33,7 +54,7 @@ haproxyStatistics = (msg) ->
     requestUrl = msg.substring urlIndex
     requestUrl = requestUrl.substring 1, requestUrl.length - 1
     infos = msg.substring(0, urlIndex - 1).split ' '
-    if infos?.length == 12
+    if infos?.length == 12 && statsClient
       timing infos[4]
       statusCodeCounter infos[5]
       connectionTotalLog infos[10]
@@ -45,9 +66,10 @@ haproxyStatistics = (msg) ->
 timing = (info)  ->
   return if !info
   tags = ['TQ', 'TW', 'TC', 'TR', 'TT']
-
-  timeList = (GLOBAL.parseInt time for time in info.split('/'))
-  console.dir timeList
+  for time in info.split '/'
+    time = GLOBAL.parseInt time
+    key = "time.#{tags[i]}"
+    statsClient.gauge key, time
 
 ###*
  * [statusCodeCounter 记录http status code]
@@ -56,7 +78,8 @@ timing = (info)  ->
 ###
 statusCodeCounter = (code) ->
   return if !code
-  console.dir code
+  key = "statusCode.#{code}"
+  statsClient.count key
 
 ###*
  * [connectionTotalLog 统计连接数, actconn/feconn/beconn/srv_conn/retries]
@@ -66,12 +89,14 @@ statusCodeCounter = (code) ->
 connectionTotalLog = (info) ->
   return if !info
   tags = ['actconn', 'feconn', 'beconn', 'srv_conn', 'retries']
-
-  # cubes = (math.cube num for num in list)
-  totalList = (GLOBAL.parseInt total for total in info.split('/'))
-  # totalList = _.map info.split('/'), (total) ->
-  #   GLOBAL.parseInt total
-  console.dir totalList
+  for total, i in info.split '/'
+    total = GLOBAL.parseInt total
+    tag = tags[i]
+    key = "connection.#{tag}"
+    if tag == 'retries'
+      statsClient.count key, total
+    else
+      statsClient.gauge key, total
 
 ###*
  * [createLogFileWriteStream 创建写log的写入流]
