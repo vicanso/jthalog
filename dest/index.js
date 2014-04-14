@@ -19,7 +19,7 @@
     server.on('listening', function() {
       var address;
       address = server.address();
-      return console.dir("UDP server listening on " + address.address + ":" + address.port);
+      return console.info("UDP server listening on " + address.address + ":" + address.port);
     });
     server.on('message', function(msg) {
       msg = msg.toString();

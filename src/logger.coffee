@@ -113,7 +113,7 @@ createLogFileWriteStream = ->
 getLogFile = ->
   date = new Date()
   str = date.getFullYear()
-  month = date.getMonth()
+  month = date.getMonth() + 1
   str += '-'
   if month < 10
     str += "0#{month}"

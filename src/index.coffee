@@ -10,7 +10,7 @@ module.exports.start = (options = {}) ->
     logger.setStatsClient options.statsClient
   server.on 'listening', ->
     address = server.address()
-    console.dir "UDP server listening on #{address.address}:#{address.port}"
+    console.info "UDP server listening on #{address.address}:#{address.port}"
   server.on 'message', (msg) ->
     msg = msg.toString()
     logger.log msg
