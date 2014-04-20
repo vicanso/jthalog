@@ -19,13 +19,13 @@
     server.on('listening', function() {
       var address;
       address = server.address();
-      return console.info("UDP server listening on " + address.address + ":" + address.port);
+      return console.info("haproxy, UDP server listening on " + address.address + ":" + address.port);
     });
     server.on('message', function(msg) {
       msg = msg.toString();
       return logger.log(msg);
     });
-    port = options.port || 9200;
+    port = options.port || '9200';
     host = options.host || '127.0.0.1';
     return server.bind(port, host);
   };
