@@ -1,5 +1,5 @@
 (function() {
-  var connectionTotalLog, createLogFileWriteStream, fs, getLogFile, haproxyStatistics, logCacheTotal, logFileName, logFileWriteStream, logPath, msgList, path, statsClient, statusCodeCounter, timing;
+  var connectionTotalLog, createLogFileWriteStream, extraHandlerList, fs, getLogFile, haproxyStatistics, logCacheTotal, logFileName, logFileWriteStream, logPath, msgList, path, statsClient, statusCodeCounter, timing;
 
   path = require('path');
 
@@ -15,6 +15,8 @@
 
   statsClient = null;
 
+  extraHandlerList = [];
+
   msgList = [];
 
 
@@ -29,12 +31,53 @@
 
 
   /**
+   * [getLogPath 获取log path]
+   * @return {[type]} [description]
+   */
+
+  module.exports.getLogPath = function() {
+    return logPath;
+  };
+
+
+  /**
    * [setStatsClient 设置stats client]
    * @param {[type]} client [description]
    */
 
   module.exports.setStatsClient = function(client) {
     statsClient = client;
+  };
+
+
+  /**
+   * [getStatsClient 获取stats client]
+   * @return {[type]} [description]
+   */
+
+  module.exports.getStatsClient = function() {
+    return statsClient;
+  };
+
+
+  /**
+   * [setLogCacheTotal 设置cache的log数量（避免频繁写硬盘）]
+   */
+
+  module.exports.setLogCacheTotal = function(total) {
+    if (total) {
+      logCacheTotal = total;
+    }
+  };
+
+
+  /**
+   * [getLogCacheTotal 获取设置cache的log数量]
+   * @return {[type]} [description]
+   */
+
+  module.exports.getLogCacheTotal = function() {
+    return logCacheTotal;
   };
 
 
@@ -58,13 +101,41 @@
 
 
   /**
+   * [addExtraHandler description]
+   * @param {[type]} handler [description]
+   */
+
+  module.exports.addExtraHandler = function(handler) {
+    return extraHandlerList.push(handler);
+  };
+
+
+  /**
+   * [removeExtraHandler description]
+   * @param  {[type]} handler [description]
+   * @return {[type]}         [description]
+   */
+
+  module.exports.removeExtraHandler = function(handler) {
+    var i, tmp, _i, _len;
+    for (i = _i = 0, _len = extraHandlerList.length; _i < _len; i = ++_i) {
+      tmp = extraHandlerList[i];
+      if (tmp === handler) {
+        extraHandlerList.splice(i, 1);
+        break;
+      }
+    }
+  };
+
+
+  /**
    * [haproxyStatistics 统计haproxy]
    * @param  {[type]} msg [description]
    * @return {[type]}     [description]
    */
 
   haproxyStatistics = function(msg) {
-    var index, infos, re, requestUrl, result, urlIndex;
+    var handler, index, infos, re, requestUrl, result, urlIndex, _i, _len;
     msg = msg.trim();
     re = /haproxy\[\d*\]\: /;
     result = re.exec(msg);
@@ -76,9 +147,15 @@
       requestUrl = requestUrl.substring(1, requestUrl.length - 1);
       infos = msg.substring(0, urlIndex - 1).split(' ');
       if ((infos != null ? infos.length : void 0) === 12 && statsClient) {
-        timing(infos[4]);
-        statusCodeCounter(infos[5]);
-        return connectionTotalLog(infos[10]);
+        timing(statsClient, infos[4]);
+        statusCodeCounter(statsClient, infos[5]);
+        connectionTotalLog(statsClient, infos[10]);
+        if (extraHandlerList.length) {
+          for (_i = 0, _len = extraHandlerList.length; _i < _len; _i++) {
+            handler = extraHandlerList[_i];
+            handler(statsClient, infos);
+          }
+        }
       }
     }
   };
@@ -86,23 +163,24 @@
 
   /**
    * [timing 记录TQ, TW, TC, TR, TT]
+   * @param  {[type]} client stats client
    * @param  {[type]} info [description]
    * @return {[type]}      [description]
    */
 
-  timing = function(info) {
-    var key, tags, time, _i, _len, _ref, _results;
+  timing = function(client, info) {
+    var i, key, tags, time, _i, _len, _ref, _results;
     if (!info) {
       return;
     }
     tags = ['TQ', 'TW', 'TC', 'TR', 'TT'];
     _ref = info.split('/');
     _results = [];
-    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-      time = _ref[_i];
+    for (i = _i = 0, _len = _ref.length; _i < _len; i = ++_i) {
+      time = _ref[i];
       time = GLOBAL.parseInt(time);
       key = "time." + tags[i];
-      _results.push(statsClient.gauge(key, time));
+      _results.push(client.gauge(key, time));
     }
     return _results;
   };
@@ -110,27 +188,29 @@
 
   /**
    * [statusCodeCounter 记录http status code]
+   * @param  {[type]} client stats client
    * @param  {[type]} code [description]
    * @return {[type]} [description]
    */
 
-  statusCodeCounter = function(code) {
+  statusCodeCounter = function(client, code) {
     var key;
     if (!code) {
       return;
     }
     key = "statusCode." + code;
-    return statsClient.count(key);
+    return client.count(key);
   };
 
 
   /**
    * [connectionTotalLog 统计连接数, actconn/feconn/beconn/srv_conn/retries]
+   * @param  {[type]} client stats client
    * @param  {[type]} info [description]
    * @return {[type]}      [description]
    */
 
-  connectionTotalLog = function(info) {
+  connectionTotalLog = function(client, info) {
     var i, key, tag, tags, total, _i, _len, _ref, _results;
     if (!info) {
       return;
@@ -144,9 +224,9 @@
       tag = tags[i];
       key = "connection." + tag;
       if (tag === 'retries') {
-        _results.push(statsClient.count(key, total));
+        _results.push(client.count(key, total));
       } else {
-        _results.push(statsClient.gauge(key, total));
+        _results.push(client.gauge(key, total));
       }
     }
     return _results;

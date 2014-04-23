@@ -6,6 +6,7 @@ logPath = null
 logFileName = null
 logFileWriteStream = null
 statsClient = null
+extraHandlerList = []
 msgList = []
 
 
@@ -18,12 +19,38 @@ module.exports.setLogPath = (filePath) ->
   return
 
 ###*
+ * [getLogPath 获取log path]
+ * @return {[type]} [description]
+###
+module.exports.getLogPath = ->
+  logPath
+
+###*
  * [setStatsClient 设置stats client]
  * @param {[type]} client [description]
 ###
 module.exports.setStatsClient = (client) ->
   statsClient = client
   return
+###*
+ * [getStatsClient 获取stats client]
+ * @return {[type]} [description]
+###
+module.exports.getStatsClient = ->
+  statsClient
+
+###*
+ * [setLogCacheTotal 设置cache的log数量（避免频繁写硬盘）]
+###
+module.exports.setLogCacheTotal = (total) ->
+  logCacheTotal = total if total
+  return
+###*
+ * [getLogCacheTotal 获取设置cache的log数量]
+ * @return {[type]} [description]
+###
+module.exports.getLogCacheTotal = ->
+  logCacheTotal
 
 ###*
  * [log log文件]
@@ -38,6 +65,25 @@ module.exports.log = (msg) ->
     logFileWriteStream.write msgList.join('')
     msgList = []
   return
+###*
+ * [addExtraHandler description]
+ * @param {[type]} handler [description]
+###
+module.exports.addExtraHandler = (handler) ->
+  extraHandlerList.push handler
+
+###*
+ * [removeExtraHandler description]
+ * @param  {[type]} handler [description]
+ * @return {[type]}         [description]
+###
+module.exports.removeExtraHandler = (handler) ->
+  for tmp, i in extraHandlerList
+    if tmp == handler
+      extraHandlerList.splice i, 1
+      break
+  return
+
 ###*
  * [haproxyStatistics 统计haproxy]
  * @param  {[type]} msg [description]
@@ -55,38 +101,44 @@ haproxyStatistics = (msg) ->
     requestUrl = requestUrl.substring 1, requestUrl.length - 1
     infos = msg.substring(0, urlIndex - 1).split ' '
     if infos?.length == 12 && statsClient
-      timing infos[4]
-      statusCodeCounter infos[5]
-      connectionTotalLog infos[10]
+      timing statsClient, infos[4]
+      statusCodeCounter statsClient, infos[5]
+      connectionTotalLog statsClient, infos[10]
+      if extraHandlerList.length
+        handler statsClient, infos for handler in extraHandlerList
+  return
 ###*
  * [timing 记录TQ, TW, TC, TR, TT]
+ * @param  {[type]} client stats client
  * @param  {[type]} info [description]
  * @return {[type]}      [description]
 ###
-timing = (info)  ->
+timing = (client, info)  ->
   return if !info
   tags = ['TQ', 'TW', 'TC', 'TR', 'TT']
-  for time in info.split '/'
+  for time, i in info.split '/'
     time = GLOBAL.parseInt time
     key = "time.#{tags[i]}"
-    statsClient.gauge key, time
+    client.gauge key, time
 
 ###*
  * [statusCodeCounter 记录http status code]
+ * @param  {[type]} client stats client
  * @param  {[type]} code [description]
  * @return {[type]} [description]
 ###
-statusCodeCounter = (code) ->
+statusCodeCounter = (client, code) ->
   return if !code
   key = "statusCode.#{code}"
-  statsClient.count key
+  client.count key
 
 ###*
  * [connectionTotalLog 统计连接数, actconn/feconn/beconn/srv_conn/retries]
+ * @param  {[type]} client stats client
  * @param  {[type]} info [description]
  * @return {[type]}      [description]
 ###
-connectionTotalLog = (info) ->
+connectionTotalLog = (client, info) ->
   return if !info
   tags = ['actconn', 'feconn', 'beconn', 'srv_conn', 'retries']
   for total, i in info.split '/'
@@ -94,9 +146,9 @@ connectionTotalLog = (info) ->
     tag = tags[i]
     key = "connection.#{tag}"
     if tag == 'retries'
-      statsClient.count key, total
+      client.count key, total
     else
-      statsClient.gauge key, total
+      client.gauge key, total
 
 ###*
  * [createLogFileWriteStream 创建写log的写入流]
