@@ -7,7 +7,7 @@ logFileName = null
 logFileWriteStream = null
 statsClient = null
 extraHandlerList = []
-msgList = []
+haproxyMsgList = []
 
 
 ###*
@@ -39,18 +39,18 @@ module.exports.setStatsClient = (client) ->
 module.exports.getStatsClient = ->
   statsClient
 
-###*
- * [setLogCacheTotal 设置cache的log数量（避免频繁写硬盘）]
-###
-module.exports.setLogCacheTotal = (total) ->
-  logCacheTotal = total if total
-  return
-###*
- * [getLogCacheTotal 获取设置cache的log数量]
- * @return {[type]} [description]
-###
-module.exports.getLogCacheTotal = ->
-  logCacheTotal
+# ###*
+#  * [setLogCacheTotal 设置cache的log数量（避免频繁写硬盘）]
+# ###
+# module.exports.setLogCacheTotal = (total) ->
+#   logCacheTotal = total if total
+#   return
+# ###*
+#  * [getLogCacheTotal 获取设置cache的log数量]
+#  * @return {[type]} [description]
+# ###
+# module.exports.getLogCacheTotal = ->
+#   logCacheTotal
 
 ###*
  * [log log文件]
@@ -58,12 +58,12 @@ module.exports.getLogCacheTotal = ->
  * @return {[type]}     [description]
 ###
 module.exports.log = (msg) ->
-  msgList.push msg
+  haproxyMsgList.push msg
   haproxyStatistics msg
-  if msgList.length == logCacheTotal
-    logFileWriteStream = createLogFileWriteStream() if !logFileWriteStream
-    logFileWriteStream.write msgList.join('')
-    msgList = []
+  # if haproxyMsgList.length == logCacheTotal
+  #   logFileWriteStream = createLogFileWriteStream() if !logFileWriteStream
+  #   logFileWriteStream.write haproxyMsgList.join('')
+  #   haproxyMsgList = []
   return
 ###*
  * [addExtraHandler description]
@@ -179,6 +179,13 @@ getLogFile = ->
     str += day
   "#{str}.log"
 
+
+setInterval ->
+  logFileWriteStream = createLogFileWriteStream() if !logFileWriteStream
+  logFileWriteStream.write haproxyMsgList.join('')
+  haproxyMsgList = []
+  return
+, 30 * 1000
 
 # 定时去判断当前时间是否已过24时，用于每日生成一个log文件
 setInterval ->

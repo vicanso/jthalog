@@ -1,5 +1,5 @@
 (function() {
-  var connectionTotalLog, createLogFileWriteStream, extraHandlerList, fs, getLogFile, haproxyStatistics, logCacheTotal, logFileName, logFileWriteStream, logPath, msgList, path, statsClient, statusCodeCounter, timing;
+  var connectionTotalLog, createLogFileWriteStream, extraHandlerList, fs, getLogFile, haproxyMsgList, haproxyStatistics, logCacheTotal, logFileName, logFileWriteStream, logPath, path, statsClient, statusCodeCounter, timing;
 
   path = require('path');
 
@@ -17,7 +17,7 @@
 
   extraHandlerList = [];
 
-  msgList = [];
+  haproxyMsgList = [];
 
 
   /**
@@ -61,42 +61,14 @@
 
 
   /**
-   * [setLogCacheTotal 设置cache的log数量（避免频繁写硬盘）]
-   */
-
-  module.exports.setLogCacheTotal = function(total) {
-    if (total) {
-      logCacheTotal = total;
-    }
-  };
-
-
-  /**
-   * [getLogCacheTotal 获取设置cache的log数量]
-   * @return {[type]} [description]
-   */
-
-  module.exports.getLogCacheTotal = function() {
-    return logCacheTotal;
-  };
-
-
-  /**
    * [log log文件]
    * @param  {[type]} msg [description]
    * @return {[type]}     [description]
    */
 
   module.exports.log = function(msg) {
-    msgList.push(msg);
+    haproxyMsgList.push(msg);
     haproxyStatistics(msg);
-    if (msgList.length === logCacheTotal) {
-      if (!logFileWriteStream) {
-        logFileWriteStream = createLogFileWriteStream();
-      }
-      logFileWriteStream.write(msgList.join(''));
-      msgList = [];
-    }
   };
 
 
@@ -271,6 +243,14 @@
     }
     return "" + str + ".log";
   };
+
+  setInterval(function() {
+    if (!logFileWriteStream) {
+      logFileWriteStream = createLogFileWriteStream();
+    }
+    logFileWriteStream.write(haproxyMsgList.join(''));
+    haproxyMsgList = [];
+  }, 30 * 1000);
 
   setInterval(function() {
     var tmpFile;
