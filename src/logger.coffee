@@ -43,7 +43,7 @@ module.exports.getStatsClient = ->
 #  * [setLogCacheTotal 设置cache的log数量（避免频繁写硬盘）]
 # ###
 # module.exports.setLogCacheTotal = (total) ->
-#   logCacheTotal = total if total
+#   logCacheTotal = total
 #   return
 # ###*
 #  * [getLogCacheTotal 获取设置cache的log数量]
@@ -157,6 +157,7 @@ connectionTotalLog = (client, info) ->
 createLogFileWriteStream = ->
   logFileWriteStream.end() if logFileWriteStream
   logFileName = getLogFile()
+  mkdirp.sync logPath
   file = path.join logPath, logFileName
   options =
     flags : 'a+'

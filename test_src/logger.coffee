@@ -34,10 +34,10 @@ describe 'logger', ->
     it 'should set and get stats client successful', ->
       logger.setStatsClient statsClientMock
       assert.equal statsClientMock, logger.getStatsClient()
-  describe '#setLogCacheTotal, #getLogCacheTotal', ->
-    it 'should set and get log cache total successful', ->
-      logger.setLogCacheTotal 1
-      assert.equal 1, logger.getLogCacheTotal()
+  # describe '#setLogCacheTotal, #getLogCacheTotal', ->
+  #   it 'should set and get log cache total successful', ->
+  #     logger.setLogCacheTotal 1
+  #     assert.equal 1, logger.getLogCacheTotal()
 
   describe '#addExtraHandler', ->
     it 'should addExtraHandler successful', (done) ->

@@ -216,6 +216,7 @@
       logFileWriteStream.end();
     }
     logFileName = getLogFile();
+    mkdirp.sync(logPath);
     file = path.join(logPath, logFileName);
     options = {
       flags: 'a+'

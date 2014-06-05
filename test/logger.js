@@ -50,12 +50,6 @@
         return assert.equal(statsClientMock, logger.getStatsClient());
       });
     });
-    describe('#setLogCacheTotal, #getLogCacheTotal', function() {
-      return it('should set and get log cache total successful', function() {
-        logger.setLogCacheTotal(1);
-        return assert.equal(1, logger.getLogCacheTotal());
-      });
-    });
     describe('#addExtraHandler', function() {
       return it('should addExtraHandler successful', function(done) {
         var handler;
