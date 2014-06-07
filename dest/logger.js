@@ -1,9 +1,11 @@
 (function() {
-  var connectionTotalLog, createLogFileWriteStream, extraHandlerList, fs, getLogFile, haproxyMsgList, haproxyStatistics, logCacheTotal, logFileName, logFileWriteStream, logPath, path, statsClient, statusCodeCounter, timing;
+  var connectionTotalLog, createLogFileWriteStream, extraHandlerList, fs, getLogFile, haproxyMsgList, haproxyStatistics, logCacheTotal, logFileName, logFileWriteStream, logPath, mkdirp, path, statsClient, statusCodeCounter, timing;
 
   path = require('path');
 
   fs = require('fs');
+
+  mkdirp = require('mkdirp');
 
   logCacheTotal = 20;
 
