@@ -1,5 +1,6 @@
 path = require 'path'
 fs = require 'fs'
+mkdirp = require 'mkdirp'
 
 logCacheTotal = 20
 logPath = null
