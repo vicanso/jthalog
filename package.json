@@ -1,9 +1,10 @@
 {
   "name": "jthalog",
   "description": "haproxy log",
-  "version": "0.0.9",
+  "version": "0.1.0",
   "main": "dest/index",
   "dependencies": {
+    "commander": "^2.3.0",
     "jtcluster": "0.0.3",
     "jtstats_client": "0.0.6",
     "mkdirp": "^0.5.0"
