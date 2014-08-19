@@ -25,7 +25,7 @@ jtHalog.start({
   port : '9200',
   host : '127.0.0.1',
   statsClient : new JTStatsClient({
-    prefix : 'haproxy.'
+    category : 'haproxy'
   })
 });
 ```
@@ -47,7 +47,7 @@ jtHalog.start({
   port : '9200',
   host : '127.0.0.1',
   statsClient : new JTStatsClient({
-    prefix : 'haproxy.'
+    category : 'haproxy'
   })
 });
 jtHalog.addStatisticsHandler(function(statsClient, infos){
