@@ -1,13 +1,11 @@
 (function() {
-  var JTCluster, JTStatsClient, config, jtCluster, jtHalog, options, start;
-
-  jtHalog = require('./index');
-
-  config = require('./config');
-
-  JTStatsClient = require('jtstats_client');
+  var JTCluster, jtCluster, options, start;
 
   start = function() {
+    var JTStatsClient, config, jtHalog;
+    jtHalog = require('./index');
+    config = require('./config');
+    JTStatsClient = require('jtstats_client');
     return jtHalog.start({
       logPath: config.getLogPath(),
       port: config.port,

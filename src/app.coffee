@@ -1,7 +1,8 @@
-jtHalog = require './index'
-config = require './config'
-JTStatsClient = require 'jtstats_client'
+
 start = ->
+  jtHalog = require './index'
+  config = require './config'
+  JTStatsClient = require 'jtstats_client'
   jtHalog.start {
     logPath : config.getLogPath()
     port : config.port
