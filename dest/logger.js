@@ -1,5 +1,5 @@
 (function() {
-  var connectionTotalLog, createLogFileWriteStream, extraHandlerList, fs, getLogFile, haproxyMsgList, haproxyStatistics, logCacheTotal, logFileName, logFileWriteStream, logPath, mkdirp, path, statsClient, statusCodeCounter, timing;
+  var connectionTotalLog, createLogFileWriteStream, dataSizeLog, extraHandlerList, fs, getLogFile, haproxyMsgList, haproxyStatistics, largeSize, logCacheTotal, logFileName, logFileWriteStream, logPath, mediumSize, mkdirp, path, requestCountLog, smallSize, statsClient, statusCodeCounter, timing, xsmallSize;
 
   path = require('path');
 
@@ -124,6 +124,8 @@
         timing(statsClient, infos[4]);
         statusCodeCounter(statsClient, infos[5]);
         connectionTotalLog(statsClient, infos[10]);
+        dataSizeLog(statsClient, infos[6]);
+        requestCountLog(statsClient);
         if (extraHandlerList.length) {
           for (_i = 0, _len = extraHandlerList.length; _i < _len; _i++) {
             handler = extraHandlerList[_i];
@@ -174,6 +176,42 @@
     }
     key = "statusCode." + code;
     return client.count(key);
+  };
+
+  xsmallSize = 2 * 1024;
+
+  smallSize = 15 * 1024;
+
+  mediumSize = 30 * 1024;
+
+  largeSize = 60 * 1024;
+
+
+  /**
+   * [dataSizeLog 记录数据量的分级，共分5个级别]
+   * @param  {[type]} client [description]
+   * @param  {[type]} size   [description]
+   * @return {[type]}        [description]
+   */
+
+  dataSizeLog = function(client, size) {
+    var type;
+    if (size < xsmallSize) {
+      type = 'xs';
+    } else if (size < smallSize) {
+      type = 's';
+    } else if (size < mediumSize) {
+      type = 'm';
+    } else if (size < largeSize) {
+      type = 'l';
+    } else {
+      type = 'xl';
+    }
+    return client.gauge("size." + type);
+  };
+
+  requestCountLog = function(client) {
+    return client.count('reqTotal');
   };
 
 

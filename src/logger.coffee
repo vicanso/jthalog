@@ -40,18 +40,6 @@ module.exports.setStatsClient = (client) ->
 module.exports.getStatsClient = ->
   statsClient
 
-# ###*
-#  * [setLogCacheTotal 设置cache的log数量（避免频繁写硬盘）]
-# ###
-# module.exports.setLogCacheTotal = (total) ->
-#   logCacheTotal = total
-#   return
-# ###*
-#  * [getLogCacheTotal 获取设置cache的log数量]
-#  * @return {[type]} [description]
-# ###
-# module.exports.getLogCacheTotal = ->
-#   logCacheTotal
 
 ###*
  * [log log文件]
@@ -61,10 +49,6 @@ module.exports.getStatsClient = ->
 module.exports.log = (msg) ->
   haproxyMsgList.push msg
   haproxyStatistics msg
-  # if haproxyMsgList.length == logCacheTotal
-  #   logFileWriteStream = createLogFileWriteStream() if !logFileWriteStream
-  #   logFileWriteStream.write haproxyMsgList.join('')
-  #   haproxyMsgList = []
   return
 ###*
  * [addExtraHandler description]
@@ -105,6 +89,8 @@ haproxyStatistics = (msg) ->
       timing statsClient, infos[4]
       statusCodeCounter statsClient, infos[5]
       connectionTotalLog statsClient, infos[10]
+      dataSizeLog statsClient, infos[6]
+      requestCountLog statsClient
       if extraHandlerList.length
         handler statsClient, infos for handler in extraHandlerList
   return
@@ -132,6 +118,33 @@ statusCodeCounter = (client, code) ->
   return if !code
   key = "statusCode.#{code}"
   client.count key
+
+
+xsmallSize = 2 * 1024
+smallSize = 15 * 1024
+mediumSize = 30 * 1024
+largeSize = 60 * 1024
+###*
+ * [dataSizeLog 记录数据量的分级，共分5个级别]
+ * @param  {[type]} client [description]
+ * @param  {[type]} size   [description]
+ * @return {[type]}        [description]
+###
+dataSizeLog = (client, size) ->
+  if size < xsmallSize
+    type = 'xs'
+  else if size < smallSize
+    type = 's'
+  else if size < mediumSize
+    type = 'm'
+  else if size < largeSize
+    type = 'l'
+  else
+    type = 'xl'
+  client.gauge "size.#{type}"
+
+requestCountLog = (client) ->
+  client.count 'reqTotal'
 
 ###*
  * [connectionTotalLog 统计连接数, actconn/feconn/beconn/srv_conn/retries]
