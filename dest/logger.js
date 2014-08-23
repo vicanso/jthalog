@@ -207,7 +207,7 @@
     } else {
       type = 'xl';
     }
-    return client.gauge("size." + type);
+    return client.count("size." + type);
   };
 
   requestCountLog = function(client) {
