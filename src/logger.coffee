@@ -141,7 +141,7 @@ dataSizeLog = (client, size) ->
     type = 'l'
   else
     type = 'xl'
-  client.gauge "size.#{type}"
+  client.count "size.#{type}"
 
 requestCountLog = (client) ->
   client.count 'reqTotal'
