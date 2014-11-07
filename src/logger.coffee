@@ -115,7 +115,7 @@ timing = (client, info)  ->
  * @return {[type]} [description]
 ###
 statusCodeCounter = (client, code) ->
-  return if !code
+  return if !code || code <= 0
   key = "statusCode.#{code}"
   client.count key
 
