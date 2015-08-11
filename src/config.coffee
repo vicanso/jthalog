@@ -12,7 +12,7 @@ do ->
 module.exports.category = program.category || ''
 module.exports.statsPort = program.statsPort
 module.exports.statsHost = program.statsHost
-module.exports.port = program.port || 9200
+module.exports.port = program.port || 2900
 
 module.exports.host = program.host || '127.0.0.1'
 
